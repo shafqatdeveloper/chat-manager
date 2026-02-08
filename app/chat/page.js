@@ -7,7 +7,15 @@ import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import ChatInput from "@/components/ChatInput";
 import { getPusherClient } from "@/lib/pusher";
-import { Loader2, Video, Info, Phone, Plus, User } from "lucide-react";
+import {
+  Loader2,
+  Video,
+  Info,
+  Phone,
+  Plus,
+  User,
+  ArrowLeft,
+} from "lucide-react";
 
 export default function ChatPage() {
   const { data: session, status } = useSession();
@@ -17,6 +25,11 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const pusherRef = useRef(null);
+
+  // Helper to clear selection (Back to inbox on mobile)
+  const handleBackToInbox = () => {
+    setSelectedConversationId(null);
+  };
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -232,24 +245,44 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-screen bg-black overflow-hidden text-zinc-100 font-sans selection:bg-blue-500/30">
-      <Sidebar
-        user={session.user}
-        conversations={conversations}
-        selectedConversationId={selectedConversationId}
-        onSelectConversation={setSelectedConversationId}
-        onStartNewChat={handleStartNewChat}
-      />
+      <div
+        className={`fixed inset-0 z-20 md:relative md:flex md:w-96 transition-transform duration-300 ${
+          selectedConversationId
+            ? "-translate-x-full md:translate-x-0"
+            : "translate-x-0"
+        }`}
+      >
+        <Sidebar
+          user={session.user}
+          conversations={conversations}
+          selectedConversationId={selectedConversationId}
+          onSelectConversation={setSelectedConversationId}
+          onStartNewChat={handleStartNewChat}
+        />
+      </div>
 
-      <main className="flex-1 flex flex-col relative bg-black">
+      <main
+        className={`flex-1 flex flex-col relative bg-black transition-all duration-300 ${
+          selectedConversationId
+            ? "translate-x-0"
+            : "translate-x-full md:translate-x-0"
+        }`}
+      >
         {selectedConversationId ? (
           <>
-            <header className="h-20 border-b border-zinc-900 flex items-center px-8 bg-black/80 backdrop-blur-xl z-10 justify-between">
-              <div className="flex items-center gap-4">
+            <header className="h-20 border-b border-zinc-900 flex items-center px-4 md:px-8 bg-black/80 backdrop-blur-xl z-10 justify-between">
+              <div className="flex items-center gap-2 md:gap-4">
+                <button
+                  onClick={handleBackToInbox}
+                  className="p-2 hover:bg-zinc-900 rounded-full md:hidden text-zinc-400"
+                >
+                  <ArrowLeft className="w-6 h-6" />
+                </button>
                 <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700">
                   <User className="w-5 h-5 text-zinc-400" />
                 </div>
                 <div>
-                  <h1 className="text-base font-bold text-white">
+                  <h1 className="text-sm md:text-base font-bold text-white truncate max-w-[120px] md:max-w-none">
                     {otherParticipant?.name || "Member"}
                   </h1>
                   <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold mt-0.5">
@@ -257,10 +290,10 @@ export default function ChatPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-6 text-white">
-                <Phone className="w-6 h-6 cursor-pointer hover:text-zinc-400 transition-all" />
-                <Video className="w-7 h-7 cursor-pointer hover:text-zinc-400 transition-all" />
-                <Info className="w-6 h-6 cursor-pointer hover:text-zinc-400 transition-all" />
+              <div className="flex items-center gap-4 md:gap-6 text-white">
+                <Phone className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-zinc-400 transition-all" />
+                <Video className="w-6 h-6 md:w-7 md:h-7 cursor-pointer hover:text-zinc-400 transition-all text-blue-400" />
+                <Info className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-zinc-400 transition-all" />
               </div>
             </header>
 
@@ -268,7 +301,7 @@ export default function ChatPage() {
             <ChatInput onSendMessage={handleSendMessage} />
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-black">
+          <div className="hidden md:flex flex-1 flex-col items-center justify-center p-8 text-center bg-black">
             <div className="w-24 h-24 rounded-full border-2 border-zinc-900 flex items-center justify-center mb-6">
               <Plus className="w-10 h-10 text-zinc-800" />
             </div>
@@ -280,9 +313,7 @@ export default function ChatPage() {
             </p>
             <button
               className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 px-6 rounded-lg transition-all active:scale-95"
-              onClick={() => {
-                // This could trigger the search in sidebar if we pass a state
-              }}
+              onClick={() => {}}
             >
               Send Message
             </button>
